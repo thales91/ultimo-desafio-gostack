@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, ScrollView } from 'react-native';
 
 import Icon from 'react-native-vector-icons/Feather';
-import { useNavigation } from '@react-navigation/native';
+import { ServerContainer, useNavigation } from '@react-navigation/native';
 import Logo from '../../assets/logo-header.png';
 import SearchInput from '../../components/SearchInput';
 
@@ -35,6 +35,7 @@ interface Food {
   price: number;
   thumbnail_url: string;
   formattedPrice: string;
+  category: number;
 }
 
 interface Category {
@@ -54,12 +55,19 @@ const Dashboard: React.FC = () => {
   const navigation = useNavigation();
 
   async function handleNavigate(id: number): Promise<void> {
-    // Navigate do ProductDetails page
+    navigation.navigate('FoodDetails', { id });
   }
 
   useEffect(() => {
     async function loadFoods(): Promise<void> {
-      // Load Foods from API
+      const result = await api.get<Food[]>(`/foods?name_like=${searchValue}`);
+      if (selectedCategory) {
+        setFoods(
+          result.data.filter(food => food.category === selectedCategory),
+        );
+      } else {
+        setFoods(result.data);
+      }
     }
 
     loadFoods();
@@ -67,14 +75,17 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadCategories(): Promise<void> {
-      // Load categories from API
+      const result = await api.get('/categories');
+      setCategories(result.data);
     }
 
     loadCategories();
   }, []);
 
   function handleSelectCategory(id: number): void {
-    // Select / deselect category
+    selectedCategory === id
+      ? setSelectedCategory(undefined)
+      : setSelectedCategory(id);
   }
 
   return (
